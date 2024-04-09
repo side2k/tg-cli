@@ -23,4 +23,6 @@ pub enum Commands {
         #[arg(long, env = "TGCLI_PASSWORD")]
         password: Option<String>,
     },
+    /// List all the dialogs and their ids
+    ListDialogs {},
 }
