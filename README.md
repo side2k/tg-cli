@@ -27,3 +27,19 @@ Example:
 $ export TGCLI_PASSWORD=mysuperpassword
 $ tg-cli login --phone +79001234567
 ```
+
+### list-dialogs
+
+Put all dialog, their types (User/Group/Channel), ids and titles to stdout.
+
+Example:
+```
+$ tg-cli list-dialogs
+
+Listing 4 dialogs:
+Group 1839823152 Old School Cruisers
+Group 2223334444 Party makers
+Channel 1234567899 Some interesting channel
+User 111333 Telegram
+
+```
