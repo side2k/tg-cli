@@ -43,3 +43,12 @@ Channel 1234567899 Some interesting channel
 User 111333 Telegram
 
 ```
+
+### msg \<dialog_id\> \<message\>
+
+Example:
+```
+$ tg-cli msg 12345678 "hey there!"
+```
+
+Note: dialog_id can be obtained using list-dialogs command
