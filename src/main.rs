@@ -32,6 +32,16 @@ async fn main() {
                 println!("{} {} {}", prefix, dialog.chat().id(), dialog.chat().name());
             }
         }
+        cli::Commands::Msg { dialog_id, message } => {
+            if !client.is_authorized().await.unwrap() {
+                panic!("Not logged in - consider invoking login command first");
+            }
+
+            let dialog = telegram::get_dialog_by_id(&client, dialog_id)
+                .await
+                .unwrap();
+            client.send_message(dialog.chat(), message).await.unwrap();
+        }
     }
 
     client
