@@ -5,10 +5,13 @@ use clap::{Parser, Subcommand};
 pub struct Cli {
     #[arg(short, long, default_value = ".session")]
     pub session_file: String,
+
     #[arg(long, env = "API_ID")]
     pub api_id: i32,
+
     #[arg(long, env = "API_HASH")]
     pub api_hash: String,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -20,9 +23,11 @@ pub enum Commands {
         /// phone number, in international format. E.g.: +79012345678
         #[arg(short, long, env = "TGCLI_PHONE")]
         phone: String,
+
         #[arg(long, env = "TGCLI_PASSWORD")]
         password: Option<String>,
     },
+
     /// List all the dialogs and their ids
     ListDialogs {},
 }
