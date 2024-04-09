@@ -1,5 +1,5 @@
 use crate::utils::request_input;
-use grammers_client::{types::User, Client, Config, SignInError};
+use grammers_client::{types::Dialog, types::User, Client, Config, SignInError};
 use grammers_session::Session;
 
 pub fn get_session(session_file_path: String) -> Session {
@@ -41,4 +41,16 @@ pub async fn login(
         }
         Err(error) => Err(error),
     }
+}
+
+pub async fn get_dialog_by_id(client: &Client, dialog_id: i64) -> Result<Dialog, String> {
+    let mut dialogs = client.iter_dialogs();
+
+    while let Some(dialog) = dialogs.next().await.unwrap() {
+        if dialog.chat().id() == dialog_id {
+            return Ok(dialog);
+        }
+    }
+
+    Err(format!("No dialog with id {} was found", dialog_id))
 }
