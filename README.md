@@ -50,9 +50,11 @@ Options:
 
 ### msg \<dialog_id\> \<message\>
 
+Send message `message` to the dialog with id `dialog_id`.
+
 Example:
 ```
 $ tg-cli msg 12345678 "hey there!"
 ```
 
-Note: dialog_id can be obtained using list-dialogs command
+Note: `dialog_id` can be obtained using [list-dialogs](#list-dialogs) command
