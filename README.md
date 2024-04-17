@@ -44,6 +44,10 @@ User 111333 Telegram
 
 ```
 
+Options:
+  * `--filter <FILTER>` - list only dialogs that contain `FILTER` in their titles (case insensitive). If `FILTER` starts with `@` - dialogs with matching usernames will be shown
+
+
 ### msg \<dialog_id\> \<message\>
 
 Example:
