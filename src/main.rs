@@ -21,20 +21,48 @@ async fn main() {
             let me = client.login(phone, password).await.unwrap();
             println!("Logged in as '{}'", me.full_name());
         }
-        cli::Commands::ListDialogs {} => {
+        cli::Commands::ListDialogs { filter } => {
             if !client.is_authorized().await {
                 panic!("Not logged in - consider invoking login command first");
             }
-            let dialogs = client.get_dialogs().await;
+            let mut dialogs = client.get_dialogs().await;
 
             println!("Listing {} dialogs:", dialogs.len());
+            if filter.len() > 0 {
+                if filter.starts_with("@") {
+                    dialogs = dialogs
+                        .into_iter()
+                        .filter(|dialog| {
+                            dialog.chat().username().unwrap_or("").to_lowercase()
+                                == filter.to_lowercase().trim_start_matches("@")
+                        })
+                        .collect();
+                } else {
+                    dialogs = dialogs
+                        .into_iter()
+                        .filter(|dialog| {
+                            dialog
+                                .chat()
+                                .name()
+                                .to_lowercase()
+                                .contains(filter.to_lowercase().as_str())
+                        })
+                        .collect();
+                }
+            }
             for dialog in dialogs {
                 let prefix = match dialog.chat {
                     Chat::User(_) => "User",
                     Chat::Group(_) => "Group",
                     Chat::Channel(_) => "Channel",
                 };
-                println!("{} {} {}", prefix, dialog.chat().id(), dialog.chat().name());
+                println!(
+                    "{} {} {} (@{})",
+                    prefix,
+                    dialog.chat().id(),
+                    dialog.chat().name(),
+                    dialog.chat().username().unwrap_or("-")
+                );
             }
         }
         cli::Commands::Msg { dialog_id, message } => {

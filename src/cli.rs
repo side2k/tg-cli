@@ -29,7 +29,11 @@ pub enum Commands {
     },
 
     /// List all the dialogs and their ids
-    ListDialogs {},
+    ListDialogs {
+        /// filter dialogs by name
+        #[arg(short, long, default_value = "")]
+        filter: String,
+    },
 
     /// Send text message to dialog specified by id (can be obtained using list-dialogs command)
     Msg { dialog_id: i64, message: String },
