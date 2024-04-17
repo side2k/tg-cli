@@ -8,22 +8,27 @@ use grammers_client::types::Chat;
 async fn main() {
     let cli_args = cli::Cli::parse();
 
-    let session = telegram::get_session(cli_args.session_file.clone());
-    let client = telegram::get_client(cli_args.api_id, cli_args.api_hash, session).await;
+    let client = telegram::TgCliClient::connect(
+        cli_args.api_id,
+        cli_args.api_hash,
+        cli_args.session_file.clone(),
+    )
+    .await;
 
     match cli_args.command {
         cli::Commands::Login { phone, password } => {
             println!("Logging in {}", phone);
-            let me = telegram::login(&client, phone, password).await.unwrap();
+            let me = client.login(phone, password).await.unwrap();
             println!("Logged in as '{}'", me.full_name());
         }
         cli::Commands::ListDialogs {} => {
-            if !client.is_authorized().await.unwrap() {
+            if !client.is_authorized().await {
                 panic!("Not logged in - consider invoking login command first");
             }
-            let mut dialogs = client.iter_dialogs();
-            println!("Listing {} dialogs:", dialogs.total().await.unwrap());
-            while let Some(dialog) = dialogs.next().await.unwrap() {
+            let dialogs = client.get_dialogs().await;
+
+            println!("Listing {} dialogs:", dialogs.len());
+            for dialog in dialogs {
                 let prefix = match dialog.chat {
                     Chat::User(_) => "User",
                     Chat::Group(_) => "Group",
@@ -33,19 +38,13 @@ async fn main() {
             }
         }
         cli::Commands::Msg { dialog_id, message } => {
-            if !client.is_authorized().await.unwrap() {
+            if !client.is_authorized().await {
                 panic!("Not logged in - consider invoking login command first");
             }
 
-            let dialog = telegram::get_dialog_by_id(&client, dialog_id)
-                .await
-                .unwrap();
-            client.send_message(dialog.chat(), message).await.unwrap();
+            client.send_message(dialog_id, message).await;
         }
     }
 
-    client
-        .session()
-        .save_to_file(cli_args.session_file)
-        .unwrap();
+    client.save_session().await
 }
