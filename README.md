@@ -48,13 +48,13 @@ Options:
   * `--filter <FILTER>` - list only dialogs that contain `FILTER` in their titles (case insensitive). If `FILTER` starts with `@` - dialogs with matching usernames will be shown
 
 
-### msg \<dialog_id\> \<message\>
+### msg \<dialog\> \<message\>
 
-Send message `message` to the dialog with id `dialog_id`.
+Send message `message` to the dialog identifiedy by `dialog`.
+By default, `dialog` is treated similar to `--filter` option argument in [list-dialogs](#list-dialogs) command. If you want it to be treated as numeric id, you can use `-n` (`--numeric-id`) option.
 
-Example:
+Examples:
 ```
-$ tg-cli msg 12345678 "hey there!"
+$ tg-cli msg @someone_special "Whats cooking, good looking?"
+$ tg-cli msg -n 12345678 "hey there!"
 ```
-
-Note: `dialog_id` can be obtained using [list-dialogs](#list-dialogs) command
