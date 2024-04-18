@@ -6,35 +6,44 @@ use grammers_client::{
 use grammers_session::Session;
 
 // A wrapper for grammers_client::Client
-pub struct TgCliClient {
+pub struct TgCliClient {}
+
+pub struct TgCliConnectedClient {
     session_file: String,
     client: Client,
 }
+pub struct TgCliLoggedInClient {
+    session_file: String,
+    client: Client,
+    user: User,
+}
 
 impl TgCliClient {
-    pub async fn connect(api_id: i32, api_hash: String, session_file: String) -> TgCliClient {
+    pub async fn connect(
+        api_id: i32,
+        api_hash: String,
+        session_file: String,
+    ) -> Result<TgCliConnectedClient, String> {
         let session = Session::load_file_or_create(&session_file).unwrap();
-        let client = Client::connect(Config {
+
+        match Client::connect(Config {
             session: session,
             api_id: api_id,
             api_hash: api_hash,
             params: Default::default(),
         })
         .await
-        .unwrap();
-        TgCliClient {
-            session_file,
-            client,
+        {
+            Ok(client) => Ok(TgCliConnectedClient {
+                session_file,
+                client,
+            }),
+            Err(error) => Err(format!("Error logging in: {}", error)),
         }
     }
+}
 
-    pub async fn save_session(&self) {
-        self.client
-            .session()
-            .save_to_file(self.session_file.clone())
-            .unwrap()
-    }
-
+impl TgCliConnectedClient {
     pub async fn is_authorized(&self) -> bool {
         self.client.is_authorized().await.unwrap()
     }
@@ -43,28 +52,54 @@ impl TgCliClient {
         &self,
         phone: String,
         password: Option<String>,
-    ) -> Result<User, SignInError> {
+    ) -> Result<TgCliLoggedInClient, String> {
         if self.client.is_authorized().await.unwrap() {
-            return Ok(self.client.get_me().await.unwrap());
+            return Ok(TgCliLoggedInClient {
+                session_file: self.session_file.clone(),
+                client: self.client.clone(),
+                user: self.client.get_me().await.unwrap(),
+            });
         }
 
         let token = self.client.request_login_code(&phone).await.unwrap();
         let code = request_input("Enter code:").unwrap();
 
         match self.client.sign_in(&token, &code).await {
-            Ok(user) => Ok(user),
+            Ok(user) => Ok(TgCliLoggedInClient {
+                session_file: self.session_file.clone(),
+                client: self.client.clone(),
+                user: user,
+            }),
             Err(SignInError::PasswordRequired(password_token)) => {
                 let hint = password_token.hint().unwrap_or("-");
                 let password = password.unwrap_or_else(|| {
                     request_input(format!("Enter password(hint: {}):", &hint).as_str()).unwrap()
                 });
 
-                self.client
+                match self
+                    .client
                     .check_password(password_token, password.trim())
                     .await
+                {
+                    Ok(user) => Ok(TgCliLoggedInClient {
+                        user: user,
+                        client: self.client.clone(),
+                        session_file: self.session_file.clone(),
+                    }),
+                    Err(error) => Err(format!("{}", error)),
+                }
             }
-            Err(error) => Err(error),
+            Err(error) => Err(format!("{}", error)),
         }
+    }
+}
+
+impl TgCliLoggedInClient {
+    pub async fn save_session(&self) {
+        self.client
+            .session()
+            .save_to_file(self.session_file.clone())
+            .unwrap()
     }
 
     pub async fn get_dialog_by_id(&self, dialog_id: i64) -> Result<Dialog, String> {
