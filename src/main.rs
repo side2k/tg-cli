@@ -2,6 +2,7 @@ mod cli;
 mod telegram;
 mod utils;
 use core::panic;
+use std::process;
 
 use clap::Parser;
 use grammers_client::types::Chat;
@@ -15,7 +16,11 @@ async fn main() {
         cli_args.api_hash,
         cli_args.session_file.clone(),
     )
-    .await;
+    .await
+    .unwrap_or_else(|error| {
+        eprint!("{}", error);
+        process::exit(1)
+    });
 
     match cli_args.command {
         cli::Commands::Login { phone, password } => {
