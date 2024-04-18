@@ -1,6 +1,8 @@
 mod cli;
 mod telegram;
 mod utils;
+use core::panic;
+
 use clap::Parser;
 use grammers_client::types::Chat;
 
@@ -42,9 +44,27 @@ async fn main() {
                 );
             }
         }
-        cli::Commands::Msg { dialog_id, message } => {
+        cli::Commands::Msg {
+            dialog,
+            numeric_id,
+            message,
+        } => {
             if !client.is_authorized().await {
                 panic!("Not logged in - consider invoking login command first");
+            }
+
+            let dialog_id: i64;
+
+            if numeric_id {
+                dialog_id = dialog.parse().unwrap();
+            } else {
+                let found_dialogs = client.get_dialogs_by_name(dialog.clone()).await;
+                if found_dialogs.len() < 1 {
+                    panic!("'{}' matched no dialogs", dialog);
+                } else if found_dialogs.len() > 1 {
+                    panic!("'{}' matched more than one dialog", dialog);
+                }
+                dialog_id = found_dialogs[0].chat().id();
             }
 
             client.send_message(dialog_id, message).await;

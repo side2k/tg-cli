@@ -36,5 +36,14 @@ pub enum Commands {
     },
 
     /// Send text message to dialog specified by id (can be obtained using list-dialogs command)
-    Msg { dialog_id: i64, message: String },
+    Msg {
+        dialog: String,
+
+        /// whether to treat <DIALOG> as numeric id. If false -
+        /// consider it equivalent to --filter argument of list-dialogs command
+        #[arg(short, long, default_value_t = false)]
+        numeric_id: bool,
+
+        message: String,
+    },
 }
