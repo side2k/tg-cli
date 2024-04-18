@@ -89,6 +89,39 @@ impl TgCliClient {
         dialogs
     }
 
+    /// If `pattern_or_username` starts with `@`, returns vector filled with dialogs
+    /// with matching usernames, otherwise it will be a vector of dialogs
+    /// with title containing `pattern_or_username`
+    pub async fn get_dialogs_by_name(&self, pattern_or_username: String) -> Vec<Dialog> {
+        let mut dialogs = self.get_dialogs().await;
+
+        if pattern_or_username.len() > 0 {
+            if pattern_or_username.starts_with("@") {
+                let username = pattern_or_username.trim_start_matches("@");
+                dialogs = dialogs
+                    .into_iter()
+                    .filter(|dialog| {
+                        dialog.chat().username().unwrap_or("").to_lowercase()
+                            == username.to_lowercase()
+                    })
+                    .collect();
+            } else {
+                let pattern = pattern_or_username;
+                dialogs = dialogs
+                    .into_iter()
+                    .filter(|dialog| {
+                        dialog
+                            .chat()
+                            .name()
+                            .to_lowercase()
+                            .contains(pattern.to_lowercase().as_str())
+                    })
+                    .collect();
+            }
+        }
+        dialogs
+    }
+
     pub async fn send_message(&self, dialog_id: i64, message: String) -> Message {
         let dialog = self.get_dialog_by_id(dialog_id).await.unwrap();
         self.client
