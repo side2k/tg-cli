@@ -10,16 +10,21 @@ use grammers_session::Session;
 pub struct TgCliClient {}
 
 pub struct TgCliConnectedClient {
+    /// path to session file
     session_file: String,
     client: Client,
 }
 pub struct TgCliLoggedInClient {
+    /// path to session file
     session_file: String,
     client: Client,
+    /// logged in user object
     pub user: User,
 }
 
 impl TgCliClient {
+    /// Creates and returns new [`TgCliConnectedClient`] instance upon successfull
+    /// connection to Telegram.
     pub async fn connect(
         api_id: i32,
         api_hash: String,
@@ -45,6 +50,7 @@ impl TgCliClient {
 }
 
 impl TgCliConnectedClient {
+    /// Check, whether client session is authorized, and return [`TgCliLoggedInClient`], if yes
     pub async fn authorized(&self) -> Result<TgCliLoggedInClient, String> {
         match self.client.is_authorized().await {
             Ok(true) => Ok(TgCliLoggedInClient {
@@ -57,6 +63,8 @@ impl TgCliConnectedClient {
         }
     }
 
+    /// Perform login using phone number. If password is required, `password` argument
+    /// will be used, if provided - otherwise, user will be asked for entering password
     pub async fn login(
         &self,
         phone: String,
@@ -104,6 +112,9 @@ impl TgCliConnectedClient {
 }
 
 impl TgCliLoggedInClient {
+    /// Returns dialog with specified `id`. It is still O(n), but doesn't necessarily
+    /// require to iterate through all dialogs - iteration stops when a dialog is
+    /// found.
     pub async fn get_dialog_by_id(&self, dialog_id: i64) -> Result<Dialog, String> {
         let mut dialogs = self.client.iter_dialogs();
 
