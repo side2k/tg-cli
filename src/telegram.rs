@@ -1,5 +1,6 @@
 use crate::utils::request_input;
 use grammers_client::{
+    client::bots::InvocationError,
     types::{Dialog, Message, User},
     Client, Config, SignInError,
 };
@@ -15,7 +16,7 @@ pub struct TgCliConnectedClient {
 pub struct TgCliLoggedInClient {
     session_file: String,
     client: Client,
-    user: User,
+    pub user: User,
 }
 
 impl TgCliClient {
@@ -44,8 +45,16 @@ impl TgCliClient {
 }
 
 impl TgCliConnectedClient {
-    pub async fn is_authorized(&self) -> bool {
-        self.client.is_authorized().await.unwrap()
+    pub async fn authorized(&self) -> Result<TgCliLoggedInClient, String> {
+        match self.client.is_authorized().await {
+            Ok(true) => Ok(TgCliLoggedInClient {
+                session_file: self.session_file.clone(),
+                client: self.client.clone(),
+                user: self.client.get_me().await.unwrap(),
+            }),
+            Ok(false) => Err(String::from("Not logged in")),
+            Err(error) => Err(format!("{}", error)),
+        }
     }
 
     pub async fn login(
@@ -95,13 +104,6 @@ impl TgCliConnectedClient {
 }
 
 impl TgCliLoggedInClient {
-    pub async fn save_session(&self) {
-        self.client
-            .session()
-            .save_to_file(self.session_file.clone())
-            .unwrap()
-    }
-
     pub async fn get_dialog_by_id(&self, dialog_id: i64) -> Result<Dialog, String> {
         let mut dialogs = self.client.iter_dialogs();
 
@@ -157,11 +159,32 @@ impl TgCliLoggedInClient {
         dialogs
     }
 
-    pub async fn send_message(&self, dialog_id: i64, message: String) -> Message {
+    pub async fn send_message(
+        &self,
+        dialog_id: i64,
+        message: String,
+    ) -> Result<Message, InvocationError> {
         let dialog = self.get_dialog_by_id(dialog_id).await.unwrap();
+        self.client.send_message(dialog.chat(), message).await
+    }
+}
+
+pub trait SessionSaver {
+    async fn save_session(&self) -> Result<(), std::io::Error>;
+}
+
+impl SessionSaver for TgCliConnectedClient {
+    async fn save_session(&self) -> Result<(), std::io::Error> {
         self.client
-            .send_message(dialog.chat(), message)
-            .await
-            .unwrap()
+            .session()
+            .save_to_file(self.session_file.clone())
+    }
+}
+
+impl SessionSaver for TgCliLoggedInClient {
+    async fn save_session(&self) -> Result<(), std::io::Error> {
+        self.client
+            .session()
+            .save_to_file(self.session_file.clone())
     }
 }
